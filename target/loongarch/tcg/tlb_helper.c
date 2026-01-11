@@ -890,13 +890,13 @@ static int guest_memory_translate(CPULoongArchState *env, target_ulong vaddr,
     if (stage1_ret != TLBRET_MATCH) {
         /* Stage 1 translation failed - return the error */
         qemu_log_mask(CPU_LOG_MMU, 
-                      "Stage 1 translation failed: VA=0x%llx, ret=%d\n",
+                      "Stage 1 translation failed: VA=0x" TARGET_FMT_lx ", ret=%d\n",
                       vaddr, stage1_ret);
         return stage1_ret;
     }
     
     qemu_log_mask(CPU_LOG_MMU, 
-                  "Stage 1 complete: VA=0x%llx -> GPA=0x%llx\n", vaddr, *gpa);
+                  "Stage 1 complete: VA=0x" TARGET_FMT_lx " -> GPA=0x" HWADDR_FMT_plx "\n", vaddr, *gpa);
     
     /* Stage 2: Guest Physical Address to Host Physical Address */
     if (is_guest_mode(env) && has_lvz_capability(env)) {
@@ -921,7 +921,7 @@ static int guest_memory_translate(CPULoongArchState *env, target_ulong vaddr,
                                         *gpa, vaddr);
                 
                 qemu_log_mask(CPU_LOG_MMU, 
-                              "Stage 2 translation triggers VM exit: GPA=0x%llx\n", 
+                              "Stage 2 translation triggers VM exit: GPA=0x" HWADDR_FMT_plx "\n", 
                               *gpa);
                 
                 /* Return a special code to indicate VM exit */
@@ -929,18 +929,18 @@ static int guest_memory_translate(CPULoongArchState *env, target_ulong vaddr,
             } else {
                 /* Stage 2 translation failed without VM exit */
                 qemu_log_mask(CPU_LOG_MMU, 
-                              "Stage 2 translation failed: GPA=0x%llx\n", *gpa);
+                              "Stage 2 translation failed: GPA=0x" HWADDR_FMT_plx "\n", *gpa);
                 return TLBRET_INVALID;
             }
         }
         
         qemu_log_mask(CPU_LOG_MMU, 
-                      "Stage 2 complete: GPA=0x%llx -> HPA=0x%llx\n", *gpa, *hpa);
+                      "Stage 2 complete: GPA=0x" HWADDR_FMT_plx " -> HPA=0x" HWADDR_FMT_plx "\n", *gpa, *hpa);
     } else {
         /* No second-level translation needed */
         *hpa = *gpa;
         qemu_log_mask(CPU_LOG_MMU, 
-                      "No stage 2 needed: GPA=0x%llx -> HPA=0x%llx\n", *gpa, *hpa);
+                      "No stage 2 needed: GPA=0x" HWADDR_FMT_plx " -> HPA=0x" HWADDR_FMT_plx "\n", *gpa, *hpa);
     }
     
     return TLBRET_MATCH;

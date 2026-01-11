@@ -133,6 +133,7 @@ target_ulong helper_cpucfg_vm(CPULoongArchState *env, target_ulong rj)
             return host_cfg;
         }
         
+#ifndef CONFIG_USER_ONLY
         /* Check if guest has permission to access this CPUCFG register */
         /* TODO: Check GCFG.GCOP for restricted CPUCFG access */
         if (rj > 15) {
@@ -140,6 +141,7 @@ target_ulong helper_cpucfg_vm(CPULoongArchState *env, target_ulong rj)
             helper_vm_exit(env, VMEXIT_CPUCFG);
             return 0;
         }
+#endif
     }
     
     return rj >= ARRAY_SIZE(env->cpucfg) ? 0 : env->cpucfg[rj];
@@ -200,7 +202,7 @@ void helper_ertn(CPULoongArchState *env)
         /* Restore previous virtualization mode from GSTAT.PVM */
         uint64_t pvm = FIELD_EX64(env->CSR_GSTAT, CSR_GSTAT, PVM);
         env->CSR_GSTAT = FIELD_DP64(env->CSR_GSTAT, CSR_GSTAT, VM, pvm);
-        qemu_log_mask(CPU_LOG_INT, "%s: Restored VM bit to %llu\n", __func__, pvm);
+        qemu_log_mask(CPU_LOG_INT, "%s: Restored VM bit to %" PRIu64 "\n", __func__, pvm);
     }
 
     env->lladdr = 1;

@@ -764,6 +764,7 @@ static inline void disable_second_level_translation(CPULoongArchState *env)
     /* Logging moved to implementation to avoid header dependencies */
 }
 
+#ifndef CONFIG_USER_ONLY
 /* Get the effective page size for translation */
 static inline uint32_t get_effective_page_size(CPULoongArchState *env, int tlb_index)
 {
@@ -775,6 +776,7 @@ static inline uint32_t get_effective_page_size(CPULoongArchState *env, int tlb_i
         return FIELD_EX64(env->CSR_STLBPS, CSR_STLBPS, PS);
     }
 }
+#endif
 
 /* Check if a virtual address is in guest direct-mapped window */
 static inline bool is_guest_direct_mapped(CPULoongArchState *env, vaddr va)

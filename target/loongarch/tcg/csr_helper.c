@@ -220,13 +220,9 @@ static bool check_csr_access_permission(CPULoongArchState *env, uint32_t csr, bo
 /* Trigger VM exit for CSR access that requires hypervisor intervention */
 static void trigger_csr_vm_exit(CPULoongArchState *env, uint32_t csr, bool is_write, target_ulong val)
 {
-    uint32_t exit_reason;
-    
-    if (is_write) {
-        exit_reason = VMEXIT_CSRW;
-    } else {
-        exit_reason = VMEXIT_CSRR;
-    }
+    (void)csr;   /* CSR number for hypervisor */
+    (void)val;   /* Value for write operations */
+    (void)is_write;
     
     /* Store CSR information for hypervisor */
     /* In a full implementation, the hypervisor would need access to:

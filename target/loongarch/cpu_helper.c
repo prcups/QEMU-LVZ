@@ -43,20 +43,20 @@ void helper_vm_exit_cpu(CPULoongArchState *env, uint32_t exit_reason)
 
     /* Save current privilege level and interrupt state for guest */
     uint64_t crmd = env->CSR_CRMD;
-    uint64_t guest_prmd = env->gpr[LOONGARCH_GCSR_PRMD];
+    uint64_t guest_prmd = env->GCSR_PRMD;
     
     /* Update guest PRMD with current state before exit */
     guest_prmd = FIELD_DP64(guest_prmd, CSR_PRMD, PPLV, 
                            FIELD_EX64(crmd, CSR_CRMD, PLV));
     guest_prmd = FIELD_DP64(guest_prmd, CSR_PRMD, PIE, 
                            FIELD_EX64(crmd, CSR_CRMD, IE));
-    env->gpr[LOONGARCH_GCSR_PRMD] = guest_prmd;
+    env->GCSR_PRMD = guest_prmd;
 
     /* Save guest's current PC in guest ERA */
-    env->gpr[LOONGARCH_GCSR_ERA] = env->pc;
+    env->GCSR_ERA = env->pc;
 
     /* Update guest exception status with VM exit code */
-    env->gpr[LOONGARCH_GCSR_ESTAT] = FIELD_DP64(env->gpr[LOONGARCH_GCSR_ESTAT], 
+    env->GCSR_ESTAT = FIELD_DP64(env->GCSR_ESTAT, 
                                                CSR_ESTAT, ECODE, EXCCODE_HVC);
 
     /* Set hypervisor privilege level and disable interrupts */
@@ -80,17 +80,17 @@ void helper_vm_save_state(CPULoongArchState *env)
     }
 
     /* Save guest CSR state to GCSR registers */
-    env->gpr[LOONGARCH_GCSR_CRMD] = env->CSR_CRMD;
-    env->gpr[LOONGARCH_GCSR_ASID] = env->CSR_ASID;
-    env->gpr[LOONGARCH_GCSR_PGDL] = env->CSR_PGDL;
-    env->gpr[LOONGARCH_GCSR_PGDH] = env->CSR_PGDH;
-    env->gpr[LOONGARCH_GCSR_BADV] = env->CSR_BADV;
-    env->gpr[LOONGARCH_GCSR_BADI] = env->CSR_BADI;
-    env->gpr[LOONGARCH_GCSR_EENTRY] = env->CSR_EENTRY;
-    env->gpr[LOONGARCH_GCSR_TLBIDX] = env->CSR_TLBIDX;
-    env->gpr[LOONGARCH_GCSR_TLBEHI] = env->CSR_TLBEHI;
-    env->gpr[LOONGARCH_GCSR_TLBELO0] = env->CSR_TLBELO0;
-    env->gpr[LOONGARCH_GCSR_TLBELO1] = env->CSR_TLBELO1;
+    env->GCSR_CRMD = env->CSR_CRMD;
+    env->GCSR_ASID = env->CSR_ASID;
+    env->GCSR_PGDL = env->CSR_PGDL;
+    env->GCSR_PGDH = env->CSR_PGDH;
+    env->GCSR_BADV = env->CSR_BADV;
+    env->GCSR_BADI = env->CSR_BADI;
+    env->GCSR_EENTRY = env->CSR_EENTRY;
+    env->GCSR_TLBIDX = env->CSR_TLBIDX;
+    env->GCSR_TLBEHI = env->CSR_TLBEHI;
+    env->GCSR_TLBELO0 = env->CSR_TLBELO0;
+    env->GCSR_TLBELO1 = env->CSR_TLBELO1;
 
     qemu_log_mask(CPU_LOG_INT, "VM state saved for GID %u\n", get_guest_id(env));
 }
@@ -103,17 +103,17 @@ void helper_vm_restore_state(CPULoongArchState *env)
     }
 
     /* Restore guest CSR state from GCSR registers */
-    env->CSR_CRMD = env->gpr[LOONGARCH_GCSR_CRMD];
-    env->CSR_ASID = env->gpr[LOONGARCH_GCSR_ASID];
-    env->CSR_PGDL = env->gpr[LOONGARCH_GCSR_PGDL];
-    env->CSR_PGDH = env->gpr[LOONGARCH_GCSR_PGDH];
-    env->CSR_BADV = env->gpr[LOONGARCH_GCSR_BADV];
-    env->CSR_BADI = env->gpr[LOONGARCH_GCSR_BADI];
-    env->CSR_EENTRY = env->gpr[LOONGARCH_GCSR_EENTRY];
-    env->CSR_TLBIDX = env->gpr[LOONGARCH_GCSR_TLBIDX];
-    env->CSR_TLBEHI = env->gpr[LOONGARCH_GCSR_TLBEHI];
-    env->CSR_TLBELO0 = env->gpr[LOONGARCH_GCSR_TLBELO0];
-    env->CSR_TLBELO1 = env->gpr[LOONGARCH_GCSR_TLBELO1];
+    env->CSR_CRMD = env->GCSR_CRMD;
+    env->CSR_ASID = env->GCSR_ASID;
+    env->CSR_PGDL = env->GCSR_PGDL;
+    env->CSR_PGDH = env->GCSR_PGDH;
+    env->CSR_BADV = env->GCSR_BADV;
+    env->CSR_BADI = env->GCSR_BADI;
+    env->CSR_EENTRY = env->GCSR_EENTRY;
+    env->CSR_TLBIDX = env->GCSR_TLBIDX;
+    env->CSR_TLBEHI = env->GCSR_TLBEHI;
+    env->CSR_TLBELO0 = env->GCSR_TLBELO0;
+    env->CSR_TLBELO1 = env->GCSR_TLBELO1;
 
     qemu_log_mask(CPU_LOG_INT, "VM state restored for GID %u\n", get_guest_id(env));
 }
@@ -137,7 +137,7 @@ void helper_vm_exit_with_fault(CPULoongArchState *env, uint32_t exit_reason,
 
     /* Update guest BADV with fault address */
     env->CSR_BADV = fault_gva;
-    env->gpr[LOONGARCH_GCSR_BADV] = fault_gva;
+    env->GCSR_BADV = fault_gva;
 
     /* For second-level translation faults, save GPA in TRGP */
     if (exit_reason == VMEXIT_MMIO || exit_reason == VMEXIT_TLB) {
@@ -382,7 +382,7 @@ hwaddr loongarch_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
 
 #ifndef CONFIG_USER_ONLY
 /* Enhanced physical address translation with virtualization support */
-int get_physical_address_lvz(CPULoongArchState *env, hwaddr *physical,
+static int G_GNUC_UNUSED get_physical_address_lvz(CPULoongArchState *env, hwaddr *physical,
                              int *prot, target_ulong address,
                              MMUAccessType access_type, int mmu_idx)
 {
@@ -426,7 +426,7 @@ int get_physical_address_lvz(CPULoongArchState *env, hwaddr *physical,
 }
 
 /* VM-aware TLB search function */
-bool loongarch_tlb_search_lvz(CPULoongArchState *env, target_ulong vaddr,
+static bool G_GNUC_UNUSED loongarch_tlb_search_lvz(CPULoongArchState *env, target_ulong vaddr,
                               int *index, uint8_t target_gid)
 {
     LoongArchTLB *tlb;
@@ -493,7 +493,7 @@ bool loongarch_tlb_search_lvz(CPULoongArchState *env, target_ulong vaddr,
 }
 
 /* VM exit handler for second-level translation faults */
-void handle_second_level_fault(CPULoongArchState *env, target_ulong vaddr, 
+static void G_GNUC_UNUSED handle_second_level_fault(CPULoongArchState *env, target_ulong vaddr, 
                               hwaddr gpa, MMUAccessType access_type)
 {
     uint32_t exit_reason;

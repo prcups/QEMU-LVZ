@@ -63,13 +63,13 @@ bool loongarch_second_level_translate(CPULoongArchState *env,
     uint8_t gid = get_guest_id(env);
     
     qemu_log_mask(CPU_LOG_MMU, 
-                  "Second-level translate: GPA=0x%llx, GID=%d, access=%d\n",
+                  "Second-level translate: GPA=0x" HWADDR_FMT_plx ", GID=%d, access=%d\n",
                   gpa, gid, access_type);
     
     /* Try VMM TLB lookup first */
     if (loongarch_vmm_tlb_lookup(env, gpa, hpa, access_type, mmu_idx)) {
         qemu_log_mask(CPU_LOG_MMU, 
-                      "Second-level TLB hit: GPA=0x%llx -> HPA=0x%llx\n",
+                      "Second-level TLB hit: GPA=0x" HWADDR_FMT_plx " -> HPA=0x" HWADDR_FMT_plx "\n",
                       gpa, *hpa);
         return true;
     }
@@ -116,7 +116,7 @@ void loongarch_trigger_vm_exit(CPULoongArchState *env,
     prepare_vm_exit_context(env, fault_gpa, fault_gva, exit_reason, 0);
     
     qemu_log_mask(CPU_LOG_MMU, 
-                  "VM Exit: reason=%d, GPA=0x%llx, GVA=0x%llx, GID=%d\n",
+                  "VM Exit: reason=%d, GPA=0x%" PRIx64 ", GVA=0x%" PRIx64 ", GID=%d\n",
                   exit_reason, fault_gpa, fault_gva, get_guest_id(env));
     
     /* Switch from Guest Mode to Host Mode */
@@ -171,14 +171,14 @@ bool loongarch_guest_tlb_lookup(CPULoongArchState *env,
             *gpa = (ppn << ps) | page_offset;
             
             qemu_log_mask(CPU_LOG_MMU, 
-                          "Guest TLB hit: VA=0x%llx -> GPA=0x%llx (GID=%d)\n",
+                          "Guest TLB hit: VA=0x%" VADDR_PRIx " -> GPA=0x" HWADDR_FMT_plx " (GID=%d)\n",
                           va, *gpa, gid);
             return true;
         }
     }
     
     qemu_log_mask(CPU_LOG_MMU, 
-                  "Guest TLB miss: VA=0x%llx (GID=%d)\n", va, gid);
+                  "Guest TLB miss: VA=0x%" VADDR_PRIx " (GID=%d)\n", va, gid);
     return false;
 }
 
@@ -217,12 +217,12 @@ bool loongarch_vmm_tlb_lookup(CPULoongArchState *env,
             *hpa = (ppn << ps) | page_offset;
             
             qemu_log_mask(CPU_LOG_MMU, 
-                          "VMM TLB hit: GPA=0x%llx -> HPA=0x%llx\n", gpa, *hpa);
+                          "VMM TLB hit: GPA=0x" HWADDR_FMT_plx " -> HPA=0x" HWADDR_FMT_plx "\n", gpa, *hpa);
             return true;
         }
     }
     
-    qemu_log_mask(CPU_LOG_MMU, "VMM TLB miss: GPA=0x%llx\n", gpa);
+    qemu_log_mask(CPU_LOG_MMU, "VMM TLB miss: GPA=0x" HWADDR_FMT_plx "\n", gpa);
     return false;
 }
 
@@ -262,7 +262,7 @@ void loongarch_fill_guest_tlb(CPULoongArchState *env,
     tlb->tlb_entry0 = FIELD_DP64(tlb->tlb_entry0, TLBENTRY, V, 1);
     
     qemu_log_mask(CPU_LOG_MMU, 
-                  "Fill guest TLB: VA=0x%llx -> GPA=0x%llx (GID=%d)\n",
+                  "Fill guest TLB: VA=0x%" VADDR_PRIx " -> GPA=0x" HWADDR_FMT_plx " (GID=%d)\n",
                   va, gpa, gid);
 }
 
@@ -296,7 +296,7 @@ void loongarch_fill_vmm_tlb(CPULoongArchState *env,
     tlb->tlb_entry0 = FIELD_DP64(tlb->tlb_entry0, TLBENTRY, V, 1);
     
     qemu_log_mask(CPU_LOG_MMU, 
-                  "Fill VMM TLB: GPA=0x%llx -> HPA=0x%llx\n", gpa, hpa);
+                  "Fill VMM TLB: GPA=0x" HWADDR_FMT_plx " -> HPA=0x" HWADDR_FMT_plx "\n", gpa, hpa);
 }
 
 /**
@@ -351,14 +351,14 @@ int loongarch_search_guest_tlb(CPULoongArchState *env,
         
         if (va_vppn == entry_vppn) {
             qemu_log_mask(CPU_LOG_MMU, 
-                          "Guest TLB search hit: VA=0x%llx, index=%d (GID=%d)\n",
+                          "Guest TLB search hit: VA=0x%" VADDR_PRIx ", index=%d (GID=%d)\n",
                           va, i, gid);
             return i;
         }
     }
     
     qemu_log_mask(CPU_LOG_MMU, 
-                  "Guest TLB search miss: VA=0x%llx (GID=%d)\n", va, gid);
+                  "Guest TLB search miss: VA=0x%" VADDR_PRIx " (GID=%d)\n", va, gid);
     return -1;
 }
 
