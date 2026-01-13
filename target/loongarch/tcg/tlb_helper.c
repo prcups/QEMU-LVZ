@@ -255,28 +255,6 @@ static void invalidate_tlb_entry(CPULoongArchState *env, int index)
     }
 }
 
-static void invalidate_tlb(CPULoongArchState *env, int index)
-{
-    LoongArchTLB *tlb;
-    uint16_t csr_asid, tlb_asid, tlb_g;
-
-    /* Use effective CSR values based on virtualization mode */
-    csr_asid = FIELD_EX64(get_effective_csr_asid(env), CSR_ASID, ASID);
-    tlb = &env->tlb[index];
-    
-    /* Check if TLB entry belongs to current guest context */
-    if (!tlb_entry_matches_guest(env, tlb)) {
-        return;
-    }
-    
-    tlb_asid = FIELD_EX64(tlb->tlb_misc, TLB_MISC, ASID);
-    tlb_g = FIELD_EX64(tlb->tlb_entry0, TLBENTRY, G);
-    if (tlb_g == 0 && tlb_asid != csr_asid) {
-        return;
-    }
-    invalidate_tlb_entry(env, index);
-}
-
 static void fill_tlb_entry(CPULoongArchState *env, int index)
 {
     LoongArchTLB *tlb = &env->tlb[index];
@@ -414,9 +392,9 @@ void helper_tlbwr(CPULoongArchState *env)
 {
     int index = FIELD_EX64(get_effective_csr_tlbidx(env), CSR_TLBIDX, INDEX);
 
-    /* Only invalidate if entry belongs to current guest */
-    if (index < LOONGARCH_TLB_MAX && tlb_entry_matches_guest(env, &env->tlb[index])) {
-        invalidate_tlb(env, index);
+    /* Always invalidate old entry before writing new one */
+    if (index < LOONGARCH_TLB_MAX) {
+        invalidate_tlb_entry(env, index);
     }
 
     if (FIELD_EX64(get_effective_csr_tlbidx(env), CSR_TLBIDX, NE)) {
@@ -461,10 +439,8 @@ void helper_tlbfill(CPULoongArchState *env)
         index = get_random_tlb(LOONGARCH_STLB, LOONGARCH_TLB_MAX - 1);
     }
 
-    /* Only invalidate if entry belongs to current guest */
-    if (tlb_entry_matches_guest(env, &env->tlb[index])) {
-        invalidate_tlb(env, index);
-    }
+    /* Always invalidate old entry before filling new one */
+    invalidate_tlb_entry(env, index);
     fill_tlb_entry(env, index);
 }
 
@@ -662,40 +638,32 @@ bool loongarch_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
                             bool probe, uintptr_t retaddr)
 {
     CPULoongArchState *env = cpu_env(cs);
-    
-    /* Use enhanced guest-aware TLB fill if virtualization is enabled */
-    if (has_lvz_capability(env)) {
-        return loongarch_cpu_tlb_fill_guest(cs, address, size, access_type, 
-                                           mmu_idx, probe, retaddr);
+    hwaddr physical;
+    int prot;
+    int ret;
+
+    /* Data access */
+    ret = get_physical_address(env, &physical, &prot, address,
+                               access_type, mmu_idx);
+
+    if (ret == TLBRET_MATCH) {
+        tlb_set_page(cs, address & TARGET_PAGE_MASK,
+                     physical & TARGET_PAGE_MASK, prot,
+                     mmu_idx, TARGET_PAGE_SIZE);
+        qemu_log_mask(CPU_LOG_MMU,
+                      "%s address=%" VADDR_PRIx " physical " HWADDR_FMT_plx
+                      " prot %d\n", __func__, address, physical, prot);
+        return true;
     } else {
-        /* Original implementation for non-virtualized systems */
-        hwaddr physical;
-        int prot;
-        int ret;
-
-        /* Data access */
-        ret = get_physical_address(env, &physical, &prot, address,
-                                   access_type, mmu_idx);
-
-        if (ret == TLBRET_MATCH) {
-            tlb_set_page(cs, address & TARGET_PAGE_MASK,
-                         physical & TARGET_PAGE_MASK, prot,
-                         mmu_idx, TARGET_PAGE_SIZE);
-            qemu_log_mask(CPU_LOG_MMU,
-                          "%s address=%" VADDR_PRIx " physical " HWADDR_FMT_plx
-                          " prot %d\n", __func__, address, physical, prot);
-            return true;
-        } else {
-            qemu_log_mask(CPU_LOG_MMU,
-                          "%s address=%" VADDR_PRIx " ret %d\n", __func__, address,
-                          ret);
-        }
-        if (probe) {
-            return false;
-        }
-        raise_mmu_exception(env, address, access_type, ret);
-        cpu_loop_exit_restore(cs, retaddr);
+        qemu_log_mask(CPU_LOG_MMU,
+                      "%s address=%" VADDR_PRIx " ret %d\n", __func__, address,
+                      ret);
     }
+    if (probe) {
+        return false;
+    }
+    raise_mmu_exception(env, address, access_type, ret);
+    cpu_loop_exit_restore(cs, retaddr);
 }
 
 target_ulong helper_lddir(CPULoongArchState *env, target_ulong base,

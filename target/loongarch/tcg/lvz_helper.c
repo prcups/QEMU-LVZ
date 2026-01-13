@@ -98,6 +98,42 @@ static uint64_t *get_guest_csr_ptr(CPULoongArchState *env, uint32_t csr)
         return &env->GCSR_TLBRERA;
     case LOONGARCH_GCSR_TLBRSAVE:
         return &env->GCSR_TLBRSAVE;
+    case LOONGARCH_GCSR_TLBRELO0:
+        return &env->GCSR_TLBRELO0;
+    case LOONGARCH_GCSR_TLBRELO1:
+        return &env->GCSR_TLBRELO1;
+    case LOONGARCH_GCSR_TLBREHI:
+        return &env->GCSR_TLBREHI;
+    case LOONGARCH_GCSR_TLBRPRMD:
+        return &env->GCSR_TLBRPRMD;
+    case LOONGARCH_GCSR_MERRCTL:
+        return &env->GCSR_MERRCTL;
+    case LOONGARCH_GCSR_MERRINFO1:
+        return &env->GCSR_MERRINFO1;
+    case LOONGARCH_GCSR_MERRINFO2:
+        return &env->GCSR_MERRINFO2;
+    case LOONGARCH_GCSR_MERRENTRY:
+        return &env->GCSR_MERRENTRY;
+    case LOONGARCH_GCSR_MERRERA:
+        return &env->GCSR_MERRERA;
+    case LOONGARCH_GCSR_MERRSAVE:
+        return &env->GCSR_MERRSAVE;
+    case LOONGARCH_GCSR_CTAG:
+        return &env->GCSR_CTAG;
+    case LOONGARCH_GCSR_DMW(0):
+        return &env->GCSR_DMW[0];
+    case LOONGARCH_GCSR_DMW(1):
+        return &env->GCSR_DMW[1];
+    case LOONGARCH_GCSR_DMW(2):
+        return &env->GCSR_DMW[2];
+    case LOONGARCH_GCSR_DMW(3):
+        return &env->GCSR_DMW[3];
+    case LOONGARCH_GCSR_DBG:
+        return &env->GCSR_DBG;
+    case LOONGARCH_GCSR_DERA:
+        return &env->GCSR_DERA;
+    case LOONGARCH_GCSR_DSAVE:
+        return &env->GCSR_DSAVE;
     default:
         /* Handle GCSR_SAVE[0-15] */
         if (csr >= LOONGARCH_GCSR_SAVE(0) && csr <= LOONGARCH_GCSR_SAVE(15)) {

@@ -160,12 +160,14 @@ void helper_ertn(CPULoongArchState *env)
             /* In guest mode, use guest TLB registers */
             csr_pplv = FIELD_EX64(env->GCSR_TLBRPRMD, CSR_TLBRPRMD, PPLV);
             csr_pie = FIELD_EX64(env->GCSR_TLBRPRMD, CSR_TLBRPRMD, PIE);
-            return_address = env->GCSR_TLBRERA;
+            /* PC is stored right-shifted by 2 in TLBRERA.PC field */
+            return_address = FIELD_EX64(env->GCSR_TLBRERA, CSR_TLBRERA, PC) << 2;
         } else {
             /* Host/hypervisor mode, use host TLB registers */
             csr_pplv = FIELD_EX64(env->CSR_TLBRPRMD, CSR_TLBRPRMD, PPLV);
             csr_pie = FIELD_EX64(env->CSR_TLBRPRMD, CSR_TLBRPRMD, PIE);
-            return_address = env->CSR_TLBRERA;
+            /* PC is stored right-shifted by 2 in TLBRERA.PC field */
+            return_address = FIELD_EX64(env->CSR_TLBRERA, CSR_TLBRERA, PC) << 2;
         }
 
         env->CSR_TLBRERA = FIELD_DP64(env->CSR_TLBRERA, CSR_TLBRERA, ISTLBR, 0);

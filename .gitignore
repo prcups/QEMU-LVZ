@@ -24,3 +24,6 @@ GTAGS
 *.md
 *.pdf
 build.sh
+rootfs.img
+QEMU_EFI.fd
+vmlinuz.efi
